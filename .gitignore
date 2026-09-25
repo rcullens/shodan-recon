@@ -1,0 +1,48 @@
+# Secrets — never commit API keys
+.env
+.env.local
+.env.*.local
+*.pem
+*.keystore
+*.jks
+key.properties
+
+# Dependencies & build outputs
+node_modules/
+dist/
+build/
+client/dist/
+server/dist/
+dist-apk/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Capacitor / Android
+client/android/.gradle/
+client/android/app/build/
+client/android/build/
+client/android/local.properties
+client/android/captures/
+client/android/.idea/
+client/android/*.iml
+client/android/app/release/
+*.hprof
+
+# iOS (if added later)
+client/ios/App/Pods/
+client/ios/DerivedData/
+
+# Logs / OS / IDE
+*.log
+npm-debug.log*
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.tsbuildinfo
+client/tsconfig.tsbuildinfo
+
+# Capacitor generated copy (keep android project tracked after first add)
+# — we DO commit client/android source once generated, but not build outputs

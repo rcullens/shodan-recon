@@ -1,0 +1,17 @@
+{
+  "name": "shodan-recon",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local desktop-style Shodan recon client with NL query translation",
+  "scripts": {
+    "dev": "concurrently -n server,client -c cyan,magenta \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "build": "npm run build --prefix server && npm run build --prefix client",
+    "start": "npm run start --prefix server",
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "build:apk": "npm run apk:debug --prefix client",
+    "cap:sync": "npm run cap:sync --prefix client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
