@@ -55,6 +55,25 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('demo') === 'vulns') {
+      const demo: RankedHost = {
+        ip: '203.0.113.10',
+        ports: [443, 445],
+        product: 'OpenSSL',
+        org: 'Example Org (documentation range)',
+        location: 'Documentation, ZZ',
+        hostnames: ['vuln-demo.example'],
+        tags: ['demo'],
+        vulns: ['CVE-2014-0160', 'CVE-2021-44228', 'CVE-2017-0144', 'CVE-2099-99999'],
+        banner_snippet: 'DEMO · documentation address · not a live scan',
+        score: 88,
+        score_reasons: ['4 known vuln(s): CVE-2014-0160, CVE-2021-44228, CVE-2017-0144…'],
+        has_screenshot: false,
+      };
+      setHosts([demo]);
+      setSelectedHost(demo);
+      setStats({ label: 'demo vulns (dev only)' });
+    }
     api
       .health()
       .then((h) => setHasKey(h.hasKey))

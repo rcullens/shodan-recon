@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import type { CveExplanation, HostImpactContext, VulnInput } from '../shared/cve-explain';
 import { nativeApi } from './nativeApi';
 
 export interface QueryVariant {
@@ -55,6 +56,7 @@ export interface HostDetailResponse {
   honeypot: boolean;
   honeypot_reasons: string[];
   ranking: RankedHost | null;
+  vuln_explanations?: CveExplanation[];
 }
 
 export interface DorkEntry {
@@ -131,6 +133,11 @@ const webApi = {
     req<{ count: number; categories: Array<{ name: string; count: number }> }>(
       '/api/dorks/categories',
     ),
+  explainCves: (vulns: VulnInput[], context?: HostImpactContext) =>
+    req<{ explanations: CveExplanation[] }>('/api/cves/explain', {
+      method: 'POST',
+      body: JSON.stringify({ vulns, context }),
+    }).then((r) => r.explanations),
 };
 
 /** Unified API: Express proxy on desktop/web, CapacitorHttp + shared modules on native. */
@@ -148,4 +155,6 @@ export const api = {
     isNativeMode() ? nativeApi.dorks(params) : webApi.dorks(params),
   dorkCategories: () =>
     isNativeMode() ? nativeApi.dorkCategories() : webApi.dorkCategories(),
+  explainCves: (vulns: VulnInput[], context?: HostImpactContext) =>
+    isNativeMode() ? nativeApi.explainCves(vulns, context) : webApi.explainCves(vulns, context),
 };

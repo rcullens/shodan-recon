@@ -1,4 +1,6 @@
 import type { RankedHost } from '../lib/api';
+import { explainCve } from '../shared/cve-explain';
+import { VulnChipRow } from './VulnExplainList';
 
 interface Props {
   hosts: RankedHost[];
@@ -87,6 +89,17 @@ export function HostList({ hosts, selectedIp, onSelect, loading, stats }: Props)
               </div>
               {h.score_reasons.length > 0 && (
                 <div className="reasons">{h.score_reasons.slice(0, 3).join(' · ')}</div>
+              )}
+              {h.vulns.length > 0 && (
+                <VulnChipRow
+                  ids={h.vulns}
+                  titles={Object.fromEntries(
+                    h.vulns.map((id) => {
+                      const e = explainCve(id);
+                      return [id, e.source === 'curated' ? e.title : ''];
+                    }),
+                  )}
+                />
               )}
               {h.banner_snippet && <div className="banner-snip">{h.banner_snippet}</div>}
             </div>

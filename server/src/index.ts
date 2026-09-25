@@ -10,6 +10,16 @@ import { getCategories, loadDorkLibrary, searchDorks } from './dork-library.js';
 import { rankAndAggregate } from './ranking.js';
 import { delay, getApiInfo, getHost, searchHosts, ShodanError } from './shodan.js';
 import type { SearchResult, ShodanMatch } from './types.js';
+import {
+  collectHostVulns,
+  enrichUnknownVulns,
+  explainCve,
+  explainVulns,
+  isCveId,
+  type HostImpactContext,
+  type VulnInput,
+} from './cve-explain.js';
+import { fetchCveDbHint } from './cve-lookup.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -236,6 +246,15 @@ app.get('/api/host/:ip', async (req, res) => {
     const { clean, removed } = filterHoneypots(asMatches);
     const reasons = [...new Set(removed.flatMap((r) => r.reasons))];
     const ranked = rankAndAggregate(clean.length ? clean : asMatches);
+    const vulnInputs = await enrichUnknownVulns(
+      collectHostVulns(host, ranked[0]?.vulns || []),
+      fetchCveDbHint,
+    );
+    const vuln_explanations = explainVulns(vulnInputs, {
+      product: (asMatches[0]?.product as string) || undefined,
+      ports: ranked[0]?.ports,
+      org: (host.org as string) || undefined,
+    });
     const hardHoney =
       tags.some((t) => ['honeypot', 'honeytrap', 'tarpit', 'censyshoneypot'].includes(t)) ||
       reasons.some(
@@ -250,7 +269,40 @@ app.get('/api/host/:ip', async (req, res) => {
       honeypot: hardHoney,
       honeypot_reasons: reasons,
       ranking: ranked[0] || null,
+      vuln_explanations,
     });
+  } catch (e) {
+    handleError(res, e);
+  }
+});
+
+app.post('/api/cves/explain', async (req, res) => {
+  const { vulns, context } = (req.body || {}) as {
+    vulns?: VulnInput[] | string[];
+    context?: HostImpactContext;
+  };
+  if (!Array.isArray(vulns)) {
+    res.status(400).json({ error: 'Body must include { vulns: array }' });
+    return;
+  }
+  const inputs: VulnInput[] = vulns.map((v) => (typeof v === 'string' ? { id: v } : v));
+  try {
+    const enriched = await enrichUnknownVulns(inputs, fetchCveDbHint);
+    res.json({ explanations: explainVulns(enriched, context) });
+  } catch (e) {
+    handleError(res, e);
+  }
+});
+
+app.get('/api/cves/:id', async (req, res) => {
+  const id = req.params.id;
+  if (!isCveId(id)) {
+    res.status(400).json({ error: 'Invalid CVE id' });
+    return;
+  }
+  try {
+    const [enriched] = await enrichUnknownVulns([{ id }], fetchCveDbHint);
+    res.json(explainCve(enriched));
   } catch (e) {
     handleError(res, e);
   }

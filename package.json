@@ -9,7 +9,8 @@
     "start": "npm run start --prefix server",
     "install:all": "npm install && npm install --prefix server && npm install --prefix client",
     "build:apk": "npm run apk:debug --prefix client",
-    "cap:sync": "npm run cap:sync --prefix client"
+    "cap:sync": "npm run cap:sync --prefix client",
+    "test": "npm test --prefix server"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

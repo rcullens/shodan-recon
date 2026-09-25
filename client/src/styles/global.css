@@ -589,6 +589,160 @@ button.pill {
   color: var(--red);
 }
 
+.vuln-chip-row {
+  margin-top: 0.4rem;
+}
+
+.vuln-chip-nick {
+  display: inline-block;
+  margin-left: 0.35rem;
+  color: var(--text-dim);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.vuln-disclaimer {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  line-height: 1.45;
+  margin-bottom: 0.65rem;
+}
+
+.vuln-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.vuln-card {
+  border: 1px solid #4a1524;
+  background: #0c070a;
+}
+
+.vuln-card.open {
+  border-color: var(--red);
+  box-shadow: 0 0 16px rgba(255, 51, 102, 0.08);
+}
+
+.vuln-card-head {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem 0.6rem;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: inherit;
+  padding: 0.55rem 0.65rem;
+  cursor: pointer;
+}
+
+.vuln-card-ids {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+  grid-column: 1;
+}
+
+.vuln-card-title {
+  grid-column: 1;
+  font-size: 0.72rem;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.vuln-card-chevron {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: var(--red);
+  font-size: 0.9rem;
+}
+
+.severity-badge,
+.cvss-chip {
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.35rem;
+  border: 1px solid var(--text-dim);
+  color: var(--text-dim);
+}
+
+.severity-badge.sev-critical {
+  border-color: var(--red);
+  color: var(--red);
+  background: rgba(255, 51, 102, 0.08);
+}
+.severity-badge.sev-high {
+  border-color: var(--magenta);
+  color: var(--magenta);
+}
+.severity-badge.sev-medium {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+.severity-badge.sev-low {
+  border-color: var(--green-dim);
+  color: var(--green-dim);
+}
+
+.vuln-card-body {
+  padding: 0 0.65rem 0.7rem;
+  border-top: 1px solid #2a1018;
+}
+
+.vuln-block {
+  margin-top: 0.55rem;
+}
+
+.vuln-block h4 {
+  font-family: var(--display);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 0.2rem;
+}
+
+.vuln-block p {
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.vuln-card-meta {
+  margin-top: 0.55rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.85rem;
+  font-size: 0.6rem;
+  color: var(--text-dim);
+}
+
+.vuln-source-desc {
+  margin-top: 0.45rem;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+}
+
+.vuln-source-desc summary {
+  cursor: pointer;
+  color: var(--amber);
+}
+
+.vuln-source-desc p {
+  margin-top: 0.3rem;
+  line-height: 1.45;
+}
+
 .error-banner {
   margin: 0.5rem 1.25rem 0;
   padding: 0.65rem 0.85rem;

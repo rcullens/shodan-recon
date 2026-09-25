@@ -1,5 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api, type HostDetailResponse, type RankedHost } from '../lib/api';
+import { VulnChipRow, VulnExplainList } from './VulnExplainList';
+import {
+  collectHostVulns,
+  explainCve,
+  explainVulns,
+  type CveExplanation,
+  type HostImpactContext,
+} from '../shared/cve-explain';
 
 interface Props {
   host: RankedHost | null;
@@ -10,10 +18,17 @@ export function HostDetail({ host, onClose }: Props) {
   const [detail, setDetail] = useState<HostDetailResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [explanations, setExplanations] = useState<CveExplanation[]>([]);
 
   useEffect(() => {
     if (!host) {
       setDetail(null);
+      return;
+    }
+    if (import.meta.env.DEV && host.ip === '203.0.113.10') {
+      setDetail(null);
+      setLoading(false);
+      setError(null);
       return;
     }
     let cancelled = false;
@@ -35,6 +50,49 @@ export function HostDetail({ host, onClose }: Props) {
     };
   }, [host?.ip]);
 
+  const h = detail?.host;
+  const dataArr = (h?.data as Array<Record<string, unknown>>) || [];
+  const vulnInputs = useMemo(() => {
+    const extra = [...(detail?.ranking?.vulns || []), ...(host?.vulns || [])];
+    return collectHostVulns(h, extra);
+  }, [h, detail?.ranking?.vulns, host?.vulns]);
+
+  const impactCtx = useMemo<HostImpactContext>(
+    () => ({
+      product: (h?.product as string) || host?.product,
+      ports: (Array.isArray(h?.ports) ? (h!.ports as number[]) : host?.ports) || [],
+      org: (h?.org as string) || host?.org,
+    }),
+    [h, host?.product, host?.ports, host?.org],
+  );
+
+  useEffect(() => {
+    if (!vulnInputs.length) {
+      setExplanations([]);
+      return;
+    }
+    const attached = detail?.vuln_explanations;
+    if (attached?.length) {
+      setExplanations(attached);
+      return;
+    }
+    setExplanations(explainVulns(vulnInputs, impactCtx));
+    const unknown = vulnInputs.filter((v) => !v.summary && explainCve(v).source === 'unknown');
+    if (!unknown.length) return;
+    let cancelled = false;
+    void api
+      .explainCves(vulnInputs, impactCtx)
+      .then((list) => {
+        if (!cancelled && list.length) setExplanations(list);
+      })
+      .catch(() => {
+        /* keep local explanations */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [host?.ip, vulnInputs, impactCtx, detail?.vuln_explanations]);
+
   if (!host) {
     return (
       <div className="panel detail-panel">
@@ -44,12 +102,7 @@ export function HostDetail({ host, onClose }: Props) {
     );
   }
 
-  const h = detail?.host;
-  const dataArr = (h?.data as Array<Record<string, unknown>>) || [];
-  const vulns =
-    detail?.ranking?.vulns ||
-    (Array.isArray(h?.vulns) ? (h!.vulns as string[]) : h?.vulns ? Object.keys(h.vulns as object) : []) ||
-    host.vulns;
+  const vulns = vulnInputs.map((v) => v.id);
 
   return (
     <div className="panel detail-panel open-mobile">
@@ -123,14 +176,8 @@ export function HostDetail({ host, onClose }: Props) {
 
         {vulns && vulns.length > 0 && (
           <div className="detail-section">
-            <h3>Vulns</h3>
-            <div className="tag-list">
-              {vulns.map((v) => (
-                <span key={v} className="tag vuln">
-                  {v}
-                </span>
-              ))}
-            </div>
+            <h3>Vulns · plain English</h3>
+            <VulnExplainList explanations={explanations.length ? explanations : explainVulns(vulnInputs, impactCtx)} />
           </div>
         )}
 
@@ -169,6 +216,12 @@ export function HostDetail({ host, onClose }: Props) {
                       <strong>HTTP TITLE</strong> {(svc.http as { title?: string }).title}
                     </span>
                   </div>
+                )}
+                {!!svc.vulns && (
+                  <VulnChipRow
+                    ids={collectHostVulns({ vulns: svc.vulns }).map((v) => v.id)}
+                    titles={Object.fromEntries(explanations.map((e) => [e.id, e.title]))}
+                  />
                 )}
                 <div className="banner-block">{String(svc.data || '(no banner)')}</div>
               </div>
