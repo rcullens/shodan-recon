@@ -8,6 +8,15 @@ import { translateNaturalLanguage } from '../shared/nl-translator';
 import { getCategories, loadDorkLibrary, searchDorks } from '../shared/dork-library';
 import { rankAndAggregate } from '../shared/ranking';
 import type { RankedHost, SearchResult, ShodanMatch, TranslateResult } from '../shared/types';
+import {
+  collectHostVulns,
+  enrichUnknownVulns,
+  explainVulns,
+  hintFromCveDbBody,
+  type CveExplanation,
+  type HostImpactContext,
+  type VulnInput,
+} from '../shared/cve-explain';
 import type {
   ApiInfo,
   DorkSearchResponse,
@@ -76,6 +85,30 @@ async function shodanFetch(path: string, params: Record<string, string> = {}): P
 
 function delay(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+async function fetchCveDbHint(id: string): Promise<{ summary?: string; cvss?: number } | null> {
+  const url = `https://cvedb.shodan.io/cve/${encodeURIComponent(id)}`;
+  try {
+    const res = await CapacitorHttp.get({
+      url,
+      headers: { Accept: 'application/json' },
+      connectTimeout: 4000,
+      readTimeout: 4000,
+    });
+    if (res.status < 200 || res.status >= 300) return null;
+    let body: unknown = res.data;
+    if (typeof body === 'string') {
+      try {
+        body = body ? JSON.parse(body) : null;
+      } catch {
+        return null;
+      }
+    }
+    return hintFromCveDbBody(body);
+  } catch {
+    return null;
+  }
 }
 
 async function searchHosts(query: string, page = 1): Promise<{ matches: ShodanMatch[]; total: number }> {
@@ -226,6 +259,15 @@ export const nativeApi = {
     const { clean, removed } = filterHoneypots(asMatches);
     const reasons = [...new Set(removed.flatMap((r) => r.reasons))];
     const ranked = rankAndAggregate(clean.length ? clean : asMatches);
+    const vulnInputs = await enrichUnknownVulns(
+      collectHostVulns(host, ranked[0]?.vulns || []),
+      fetchCveDbHint,
+    );
+    const vuln_explanations = explainVulns(vulnInputs, {
+      product: (asMatches[0]?.product as string) || undefined,
+      ports: ranked[0]?.ports,
+      org: (host.org as string) || undefined,
+    });
     const hardHoney =
       tags.some((t) => ['honeypot', 'honeytrap', 'tarpit', 'censyshoneypot'].includes(t)) ||
       reasons.some(
@@ -239,7 +281,16 @@ export const nativeApi = {
       honeypot: hardHoney,
       honeypot_reasons: reasons,
       ranking: ranked[0] || null,
+      vuln_explanations,
     };
+  },
+
+  explainCves: async (
+    vulns: VulnInput[],
+    context?: HostImpactContext,
+  ): Promise<CveExplanation[]> => {
+    const enriched = await enrichUnknownVulns(vulns, fetchCveDbHint);
+    return explainVulns(enriched, context);
   },
 
   dorks: async (params: {

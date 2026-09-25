@@ -91,6 +91,7 @@ Or from repo root after deps are installed: `npm run build:apk` (runs client syn
 | Dork library browse | Via `/api/dorks` | Bundled `dorks.json` |
 | Credits / plan pill | `/api/info` | Direct `/api-info` |
 | Honeypot filter + ranking | Server | In-app shared modules |
+| Plain-English CVE explainers | Shared module + `/api/cves/explain` | Shared module + optional CVE-DB lookup |
 | Express Node server | Required | **Not used** |
 
 ## Environment (desktop)
@@ -108,6 +109,7 @@ Or from repo root after deps are installed: `npm run build:apk` (runs client syn
 - Credit/plan display
 - Honeypot filter + interestingness ranking
 - Dark hacker / cyberpunk UI
+- Plain-English CVE cards on host detail (and CVE chips in the results list): what it is, what it means, how it can affect that host. Curated map for common CVEs; unknown IDs fall back to Shodan/NVD text plus a conservative paraphrase — no exploit steps.
 
 ## Dork library
 
